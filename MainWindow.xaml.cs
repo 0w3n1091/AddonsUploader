@@ -20,20 +20,26 @@ namespace AddonsUploader
     /// </summary>
     public partial class MainWindow : Window
     {
+        private CommonOpenFileDialog _dialog;
         public MainWindow()
         {
             InitializeComponent();
+            InitializeDialog();
+        }
+        private void InitializeDialog()
+        {
+            _dialog = new CommonOpenFileDialog("Wybierz folder")
+            {
+                InitialDirectory = "C:\\",
+                IsFolderPicker = true
+            };
         }
 
         private void PathButton_Click(object sender, RoutedEventArgs e)
         {
-            CommonOpenFileDialog dialog = new CommonOpenFileDialog();
-            dialog.InitialDirectory = "C:\\";
-            dialog.IsFolderPicker = true;
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            if (_dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                PathLabel.Content = dialog.FileName;
-
+                PathLabel.Content = _dialog.FileName;
             }
         }
 
