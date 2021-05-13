@@ -19,3 +19,24 @@ C:\Users\Owen\Desktop\Unity Projekcik\AddonsUploader\AddonsUploader\obj\Debug\Ad
 C:\Users\Owen\Desktop\Unity Projekcik\AddonsUploader\AddonsUploader\obj\Debug\AddonsUploader.csproj.CopyComplete
 C:\Users\Owen\Desktop\Unity Projekcik\AddonsUploader\AddonsUploader\obj\Debug\AddonsUploader.exe
 C:\Users\Owen\Desktop\Unity Projekcik\AddonsUploader\AddonsUploader\obj\Debug\AddonsUploader.pdb
+F:\Projekty\AddonsUploader\bin\Debug\AddonsUploader.exe.config
+F:\Projekty\AddonsUploader\bin\Debug\AddonsUploader.exe
+F:\Projekty\AddonsUploader\bin\Debug\AddonsUploader.pdb
+F:\Projekty\AddonsUploader\bin\Debug\Microsoft.WindowsAPICodePack.dll
+F:\Projekty\AddonsUploader\bin\Debug\Microsoft.WindowsAPICodePack.ExtendedLinguisticServices.dll
+F:\Projekty\AddonsUploader\bin\Debug\Microsoft.WindowsAPICodePack.Sensors.dll
+F:\Projekty\AddonsUploader\bin\Debug\Microsoft.WindowsAPICodePack.Shell.dll
+F:\Projekty\AddonsUploader\bin\Debug\Microsoft.WindowsAPICodePack.ShellExtensions.dll
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.csprojAssemblyReference.cache
+F:\Projekty\AddonsUploader\obj\Debug\MainWindow.g.cs
+F:\Projekty\AddonsUploader\obj\Debug\App.g.cs
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader_MarkupCompile.cache
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader_MarkupCompile.lref
+F:\Projekty\AddonsUploader\obj\Debug\MainWindow.baml
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.g.resources
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.Properties.Resources.resources
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.csproj.GenerateResource.cache
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.csproj.CoreCompileInputs.cache
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.csproj.CopyComplete
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.exe
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.pdb

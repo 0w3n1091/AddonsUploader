@@ -4,11 +4,11 @@
 winexe
 C#
 .cs
-F:\Projekty\AddonsUploader\obj\Debug\
+F:\Projekty\AddonsUploader\obj\Release\
 AddonsUploader
 none
 false
-DEBUG;TRACE
+TRACE
 F:\Projekty\AddonsUploader\App.xaml
 11151548125
 
@@ -16,5 +16,5 @@ F:\Projekty\AddonsUploader\App.xaml
 18-2030932329
 MainWindow.xaml;
 
-False
+True
 
