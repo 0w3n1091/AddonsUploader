@@ -14,7 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
-
+using System.IO.Compression;
 
 namespace AddonsUploader
 {
@@ -26,12 +26,8 @@ namespace AddonsUploader
         private CommonOpenFileDialog _dialog;
         private static readonly string _settingsFolder = "E:\\", _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
-        private string _wtfPath;
-        private string _intPath;
-        private string _wowPath;
-
-        
-
+        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip;
+ 
         public MainWindow()
         {
             InitializeComponent();
@@ -39,6 +35,8 @@ namespace AddonsUploader
             if (File.Exists(_settingsFullPath))
             {
                 _wowPath = File.ReadAllText(_settingsFullPath);
+                _wtfZip = _wowPath + "\\wtf_temp.zip";
+                _intZip = _wowPath + "\\int_temp.zip";
                 _wtfPath = _wowPath + "\\WTF";
                 _intPath = _wowPath + "\\Interface";
                 PathLabel.Content = _wowPath;
@@ -99,18 +97,47 @@ namespace AddonsUploader
 
         private void SettingsSave()
         {
-            File.WriteAllText(_settingsFolder + _settingsName,_dialog.FileName);
+            File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
+
+        private void ZipInterface_Click(object sender, RoutedEventArgs e)
+        {
+            if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
+            {
+                ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
+                //ZipFile.CreateFromDirectory(_intPath, _intZip);
+                MessageBox.Show("DONE");
+            }
+            else
+            {
+                MessageBox.Show("Wrong Directory");
+            }
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
 
         private void InterfaceCheck_Checked(object sender, RoutedEventArgs e)
         {
-         
+
         }
 
         private void WTFCheck_Checked(object sender, RoutedEventArgs e)
         {
 
         }
+ 
         
     }
 }

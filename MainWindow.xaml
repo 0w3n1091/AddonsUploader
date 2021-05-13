@@ -11,6 +11,7 @@
         <Label x:Name="PathLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="132,377,0,0" Width="369" RenderTransformOrigin="0.498,0.551"/>
         <CheckBox x:Name="InterfaceCheck" Content="Interface" HorizontalAlignment="Left" Margin="506,372,0,0" VerticalAlignment="Top" Checked="InterfaceCheck_Checked"/>
         <CheckBox x:Name="WTFCheck" Content="WTF" HorizontalAlignment="Left" Margin="506,394,0,0" VerticalAlignment="Top" Checked="WTFCheck_Checked"/>
+        <Button x:Name="ZipInterface" Content="Zip Interface" HorizontalAlignment="Left" Margin="627,377,0,0" VerticalAlignment="Top" Width="111" Height="32" Click="ZipInterface_Click"/>
 
     </Grid>
 </Window>
