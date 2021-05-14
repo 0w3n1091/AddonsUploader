@@ -15,7 +15,12 @@ using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
 using System.IO.Compression;
-
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Drive.v3;
+using Google.Apis.Drive.v3.Data;
+using Google.Apis.Services;
+using Google.Apis.Util.Store;
+using System.Threading;
 namespace AddonsUploader
 {
     /// <summary>
@@ -27,14 +32,64 @@ namespace AddonsUploader
         private static readonly string _settingsFolder = "E:\\", _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
         private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip;
+        static string[] Scopes = { DriveService.Scope.DriveReadonly };
+        static string ApplicationName = "Drive API test";
  
         public MainWindow()
         {
+            //////////////////////////////////////////////////////////GOOGLE DRIVE API//////////////////////////////////////////////////////////////////////////////
+            UserCredential credential;
+            using (var stream =
+                new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
+            {
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
+                string credPath = "token.json";
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    Scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + credPath);
+            }
+
+            // Create Drive API service.
+            var service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+            // Define parameters of request.
+            FilesResource.ListRequest listRequest = service.Files.List();
+            listRequest.PageSize = 10;
+            listRequest.Fields = "nextPageToken, files(id, name)";
+
+            // List files.
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
+                .Files;
+            Console.WriteLine("Files:");
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    Console.WriteLine("{0} ({1})", file.Name, file.Id);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No files found.");
+            }
+            Console.Read();
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
             InitializeComponent();
             InitializeElements();
-            if (File.Exists(_settingsFullPath))
+            if (System.IO.File.Exists(_settingsFullPath))
             {
-                _wowPath = File.ReadAllText(_settingsFullPath);
+                _wowPath = System.IO.File.ReadAllText(_settingsFullPath);
                 _wtfZip = _wowPath + "\\wtf_temp.zip";
                 _intZip = _wowPath + "\\int_temp.zip";
                 _wtfPath = _wowPath + "\\WTF";
@@ -48,11 +103,11 @@ namespace AddonsUploader
         {
             InterfaceCheck.IsEnabled = false;
             WTFCheck.IsEnabled = false;
-            if (File.Exists(_settingsFullPath))
+            if (System.IO.File.Exists(_settingsFullPath))
             {
                 _dialog = new CommonOpenFileDialog()
                 {
-                    InitialDirectory = File.ReadAllText(_settingsFullPath),
+                    InitialDirectory = System.IO.File.ReadAllText(_settingsFullPath),
                     IsFolderPicker = true,
                 };
             }
@@ -97,7 +152,7 @@ namespace AddonsUploader
 
         private void SettingsSave()
         {
-            File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
+            System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
         private void ZipInterface_Click(object sender, RoutedEventArgs e)
@@ -141,3 +196,4 @@ namespace AddonsUploader
         
     }
 }
+

@@ -56,3 +56,4 @@ F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Core.xml
 F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v3.pdb
 F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v3.xml
 F:\Projekty\AddonsUploader\bin\Debug\Newtonsoft.Json.xml
+F:\Projekty\AddonsUploader\bin\Debug\client_cred.json
