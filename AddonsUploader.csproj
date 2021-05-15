@@ -133,6 +133,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="serv_cred.json" />
     <None Include="client_cred.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
