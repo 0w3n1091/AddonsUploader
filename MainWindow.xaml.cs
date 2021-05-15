@@ -33,7 +33,8 @@ namespace AddonsUploader
         private static readonly string _settingsFolder = "E:\\", _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
         private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip;
-
+        private bool _loginOk;
+        private string _credPath = "token.json";
         static string[] _scopes = { DriveService.Scope.Drive,
                                     DriveService.Scope.DriveAppdata,
                                     DriveService.Scope.DriveFile,
@@ -49,6 +50,10 @@ namespace AddonsUploader
         {
             InitializeComponent();
             InitializeElements();
+            if (System.IO.Directory.Exists(_credPath))
+            {
+                Authenticate();
+            }
             if (System.IO.File.Exists(_settingsFullPath))
             {
                 _wowPath = System.IO.File.ReadAllText(_settingsFullPath);
@@ -96,31 +101,31 @@ namespace AddonsUploader
             }
         }
 
+        private void ZipInterface_Click(object sender, RoutedEventArgs e)
+        {
+            if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
+            {
+                ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
+                //ZipFile.CreateFromDirectory(_intPath, _intZip);
+                MessageBox.Show("DONE");
+            }
+            else
+            {
+                MessageBox.Show("Wrong Directory");
+            }
+        }
+
         private void GoogleLogin_Click(object sender, RoutedEventArgs e)
         {
-            using (var stream =
-                new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
+            if (System.IO.Directory.Exists(_credPath))
             {
-                // The file token.json stores the user's access and refresh tokens, and is created
-                // automatically when the authorization flow completes for the first time.
-                string credPath = "token.json";
-                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.Load(stream).Secrets,
-                    _scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + credPath);
-
+                System.IO.Directory.Delete(_credPath, true);
+                Authenticate();
             }
-
-
-            // Create Drive API service.
-            _service = new DriveService(new BaseClientService.Initializer()
+            else
             {
-                HttpClientInitializer = _credential,
-                ApplicationName = _applicationName,
-            });
+                Authenticate();
+            }
         }
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
@@ -141,6 +146,10 @@ namespace AddonsUploader
             var file = request.ResponseBody;
             Console.WriteLine("File ID: " + file.Id);
         }
+
+
+
+
 
 
         private void FolderCheck()
@@ -165,18 +174,29 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        private void ZipInterface_Click(object sender, RoutedEventArgs e)
+        private void Authenticate()
         {
-            if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
+            using (var stream =
+                new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
             {
-                ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
-                //ZipFile.CreateFromDirectory(_intPath, _intZip);
-                MessageBox.Show("DONE");
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
+                
+                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    _scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(_credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + _credPath);
+
             }
-            else
+            // Create Drive API service.
+            _service = new DriveService(new BaseClientService.Initializer()
             {
-                MessageBox.Show("Wrong Directory");
-            }
+                HttpClientInitializer = _credential,
+                ApplicationName = _applicationName,
+            });
         }
 
        
