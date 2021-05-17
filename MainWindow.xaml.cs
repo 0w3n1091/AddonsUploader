@@ -32,18 +32,18 @@ namespace AddonsUploader
         private CommonOpenFileDialog _dialog;
         private static readonly string _settingsFolder = "E:\\", _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
-        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip;
-        private bool _loginOk;
+        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip, _date, _folderID;
         private string _credPath = "token.json";
+        private bool _driveCheck;
         static string[] _scopes = { DriveService.Scope.Drive,
                                     DriveService.Scope.DriveAppdata,
                                     DriveService.Scope.DriveFile,
                                     DriveService.Scope.DriveMetadataReadonly,
                                     DriveService.Scope.DriveReadonly,
                                     DriveService.Scope.DriveScripts};
-        static string _applicationName = "World of Warcraft AddonsUploader";
-        UserCredential _credential;
-        DriveService _service;
+        private static string _applicationName = "World of Warcraft AddonsUploader";
+        private UserCredential _credential;
+        private DriveService _service;
 
 
         public MainWindow()
@@ -52,7 +52,7 @@ namespace AddonsUploader
             InitializeElements();
             if (System.IO.Directory.Exists(_credPath))
             {
-                Authenticate();
+                GoogleAuthenticate();
             }
             if (System.IO.File.Exists(_settingsFullPath))
             {
@@ -64,6 +64,7 @@ namespace AddonsUploader
                 PathLabel.Content = _wowPath;
                 FolderCheck();
             }
+            
         }
 
         private void InitializeElements()
@@ -120,37 +121,123 @@ namespace AddonsUploader
             if (System.IO.Directory.Exists(_credPath))
             {
                 System.IO.Directory.Delete(_credPath, true);
-                Authenticate();
+                GoogleAuthenticate();
             }
             else
             {
-                Authenticate();
+                GoogleAuthenticate();
             }
         }
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
         {
+     
+            _date = DateTime.Now.ToString();
+            DriveList();
+            ///////create folder///////////////////////////////////////////////
+            var folderMetaData = new Google.Apis.Drive.v3.Data.File()
+            {
+                Name = "World of Warcraft AddonsUploader",
+                MimeType = "application/vnd.google-apps.folder"
+            };
+            if (_driveCheck == false)
+            {
+                FilesResource.CreateRequest folderRequest;
+                folderRequest = _service.Files.Create(folderMetaData);
+                folderRequest.Fields = "id";
+                var folder = folderRequest.Execute();
+                _folderID = folder.Id;
+            }
+            
+            /////upload file to a folder////////////////////////////////////////
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
             {
-                Name = "test.txt"
+                Parents = new List<string> { _folderID },
+                Name = _date + ".zip"
             };
-
-            FilesResource.CreateMediaUpload request;
-            using (var stream = new System.IO.FileStream(@"E:\settings.txt", System.IO.FileMode.Open))
+            FilesResource.CreateMediaUpload fileRequest;
+            using (var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open))
             {
-                request = _service.Files.Create(fileMetadata, stream, "text file/txt");
-                request.Fields = "id";
-                request.Upload();
+                fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/zip");
+                fileRequest.Fields = "id";
+                fileRequest.Upload();
             }
-
-            var file = request.ResponseBody;
-            Console.WriteLine("File ID: " + file.Id);
+            var file = fileRequest.ResponseBody;
+            ListInterface();
         }
 
+        private void DriveList()
+        {
+            FilesResource.ListRequest listRequest = _service.Files.List();
+            listRequest.PageSize = 10;
+            listRequest.Fields = "nextPageToken, files(id, name)";
 
+            // List files.
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
+                .Files;
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    if (file.Name == _applicationName)
+                    {
+                        _driveCheck = true;
+                        _folderID = file.Id;
+                    }
+                }
+            }
+        }
 
+        private void GoogleAuthenticate()
+        {
+            using (var stream = new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
+            {
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
 
+                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    _scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(_credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + _credPath);
 
+            }
+            // Create Drive API service.
+            _service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = _credential,
+                ApplicationName = _applicationName,
+            });
+        }
+       
+        private void ListInterface()
+        {
+            
+            FilesResource.ListRequest listRequest = _service.Files.List();
+            string query ="'" + _folderID + "'" + " in parents";
+            Console.WriteLine(query);
+            listRequest.Q = query;
+            listRequest.PageSize = 10;
+            listRequest.Fields = "nextPageToken, files(id, name)";
+            // List files.
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
+                .Files;
+            Console.WriteLine("Files:");
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    Console.WriteLine("{0} ({1})", file.Name, file.Id);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No files found.");
+            }
+            Console.Read();
+        }
 
         private void FolderCheck()
         {
@@ -174,30 +261,14 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        private void Authenticate()
-        {
-            using (var stream =
-                new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
-            {
-                // The file token.json stores the user's access and refresh tokens, and is created
-                // automatically when the authorization flow completes for the first time.
-                
-                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.Load(stream).Secrets,
-                    _scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(_credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + _credPath);
+        
 
-            }
-            // Create Drive API service.
-            _service = new DriveService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = _credential,
-                ApplicationName = _applicationName,
-            });
-        }
+        
+        
+
+        
+       
+        
 
        
 
@@ -222,7 +293,7 @@ namespace AddonsUploader
 
         private void WTFCheck_Checked(object sender, RoutedEventArgs e)
         {
-
+            
         }
  
         
