@@ -45,7 +45,13 @@ namespace AddonsUploader
         private UserCredential _credential;
         private DriveService _service;
 
-
+        public class InterfaceElement
+        {
+            public string Name { get; set; }
+            public string ID { get; set; }
+        }
+            
+          
         public MainWindow()
         {
             InitializeComponent();
@@ -64,13 +70,15 @@ namespace AddonsUploader
                 PathLabel.Content = _wowPath;
                 FolderCheck();
             }
-            
+            DriveList();
+            InterfaceData.ItemsSource = ListInterface();
         }
 
         private void InitializeElements()
         {
             InterfaceCheck.IsEnabled = false;
             WTFCheck.IsEnabled = false;
+            
             if (System.IO.File.Exists(_settingsFullPath))
             {
                 _dialog = new CommonOpenFileDialog()
@@ -131,7 +139,6 @@ namespace AddonsUploader
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
         {
-     
             _date = DateTime.Now.ToString();
             DriveList();
             ///////create folder///////////////////////////////////////////////
@@ -163,8 +170,10 @@ namespace AddonsUploader
                 fileRequest.Upload();
             }
             var file = fileRequest.ResponseBody;
-            ListInterface();
+            InterfaceData.ItemsSource = ListInterface();
         }
+
+        
 
         private void DriveList()
         {
@@ -212,9 +221,9 @@ namespace AddonsUploader
             });
         }
        
-        private void ListInterface()
+        public List<InterfaceElement> ListInterface()
         {
-            
+            List <InterfaceElement> dataGrid = new List<InterfaceElement>();
             FilesResource.ListRequest listRequest = _service.Files.List();
             string query ="'" + _folderID + "'" + " in parents";
             Console.WriteLine(query);
@@ -230,13 +239,18 @@ namespace AddonsUploader
                 foreach (var file in files)
                 {
                     Console.WriteLine("{0} ({1})", file.Name, file.Id);
+                    dataGrid.Add(new InterfaceElement()
+                    {
+                        ID = file.Id,
+                        Name = file.Name
+                    });
                 }
             }
             else
             {
                 Console.WriteLine("No files found.");
             }
-            Console.Read();
+            return dataGrid;
         }
 
         private void FolderCheck()
@@ -261,16 +275,6 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        
-
-        
-        
-
-        
-       
-        
-
-       
 
 
 
@@ -285,6 +289,19 @@ namespace AddonsUploader
 
 
 
+
+
+
+
+        private void InterfaceLoad_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void InterfaceData_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
 
         private void InterfaceCheck_Checked(object sender, RoutedEventArgs e)
         {

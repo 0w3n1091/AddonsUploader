@@ -14,6 +14,8 @@
         <Button x:Name="ZipInterface" Content="Zip Interface" HorizontalAlignment="Left" Margin="663,377,0,0" VerticalAlignment="Top" Width="119" Height="32" Click="ZipInterface_Click"/>
         <Button x:Name ="LoginButton" Content="Google Drive Login" HorizontalAlignment="Left" Margin="663,10,0,0" VerticalAlignment="Top" Width="119" Height="41" Click="GoogleLogin_Click"/>
         <Button x:Name ="UIUpload" Content="Upload" HorizontalAlignment="Left" Margin="663,330,0,0" VerticalAlignment="Top" Width="119" Height="32" Click="UIUpload_Click"/>
+        <DataGrid x:Name = "InterfaceData" HorizontalAlignment="Left" Height="352" Margin="10,10,0,0" VerticalAlignment="Top" Width="631" SelectionChanged="InterfaceData_SelectionChanged"/>
+        <Button x:Name = "InterfaceList" Content="Load Interface List" HorizontalAlignment="Left" Margin="663,279,0,0" VerticalAlignment="Top" Width="119" Height="32" Click="InterfaceLoad_Click"/>
 
     </Grid>
 </Window>
