@@ -1,0 +1,83 @@
+[33mcommit b88e28456216d7e3f8b769ea418179360902db11[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31mAddonsUploader/master[m[33m)[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Sat May 22 15:16:28 2021 +0200
+
+    working backup, needs rework?
+
+[33mcommit d70b0f2c0cd534ca0d8c346fff9d2db99c8922b6[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Sat May 22 11:01:53 2021 +0200
+
+    basic data grid working
+
+[33mcommit 4f86ccf29704b05cdf85d76a1fae7e26c52fe320[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Tue May 18 20:11:53 2021 +0200
+
+    basic implementation of datagrid
+
+[33mcommit 9ac5c7f6fb0c411bbc1ddd149863fdc241d825cd[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Mon May 17 20:25:04 2021 +0200
+
+    upload to specific folder, listing files from this folder, but still needs some work
+
+[33mcommit b07701b215d355d61719deb24e4b20332dbae380[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Sat May 15 20:27:42 2021 +0200
+
+    better login, logout, minor improvements
+
+[33mcommit afcdeca3533a75d1430246b60755d346f21bdde2[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Sat May 15 19:33:20 2021 +0200
+
+    basic uploader works
+
+[33mcommit 977068f3c284208ab991cabc3ab8051ae285cc28[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Fri May 14 21:49:03 2021 +0200
+
+    basic google drive api implementation
+
+[33mcommit 64a885b9bb0d492877b6710482e8627657a803fc[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Thu May 13 18:02:07 2021 +0200
+
+    another minor improvements
+
+[33mcommit a146778ba2161829c356eb95839ed037217750ba[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Thu May 13 15:10:06 2021 +0200
+
+    minor improvements
+
+[33mcommit 5cc7f3014ece303f044707ab2335a6b3ac688eef[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Thu May 13 14:57:03 2021 +0200
+
+    commit 1
+
+[33mcommit 5e662e315c9fce54477bf0a9ff12af0bc90dfe51[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Thu May 13 14:48:24 2021 +0200
+
+    working path button, checkboxes, path label, creating settings file with interface folder
+
+[33mcommit cb6fb46bc8f2e3c8ecf701dd76d508bb25bee400[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Wed May 12 18:03:05 2021 +0200
+
+    code cleanup
+
+[33mcommit 8b7cb5a500acc2634ec436be6abb30dcd0a24798[m
+Author: ggwarys <grzegorzgwarys@gmail.com>
+Date:   Tue May 11 21:18:07 2021 +0200
+
+    first commit, UI, button, path on label script
+
+[33mcommit 126f8e0ea176a3654fd059667f71577ca11d318a[m
+Author: Grzegorz Gwarys <59802118+0w3n1091@users.noreply.github.com>
+Date:   Tue May 11 21:16:03 2021 +0200
+
+    Initial commit

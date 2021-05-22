@@ -44,8 +44,6 @@ namespace AddonsUploader
         private static string _applicationName = "World of Warcraft AddonsUploader";
         private UserCredential _credential;
         private DriveService _service;
-        List<InterfaceElement> dataGrid = new List<InterfaceElement>();
-
         public class InterfaceElement
         {
             public string Name { get; set; }
@@ -61,6 +59,11 @@ namespace AddonsUploader
             if (System.IO.Directory.Exists(_credPath))
             {
                 GoogleAuthenticate();
+            }
+            else
+            {
+                OnlineStatus.Foreground = Brushes.Red;
+                OnlineStatus.Content = "Offline";
             }
             if (System.IO.File.Exists(_settingsFullPath))
             {
@@ -119,9 +122,16 @@ namespace AddonsUploader
         {
             if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
             {
-                ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
-                //ZipFile.CreateFromDirectory(_intPath, _intZip);
-                MessageBox.Show("DONE");
+                if (System.IO.File.Exists(_wtfZip))
+                {
+                    MessageBox.Show("File already exists");
+                }
+                else
+                {
+                    ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
+                    //ZipFile.CreateFromDirectory(_intPath, _intZip);
+                    MessageBox.Show("DONE");
+                }
             }
             else
             {
@@ -134,6 +144,8 @@ namespace AddonsUploader
             if (System.IO.Directory.Exists(_credPath))
             {
                 System.IO.Directory.Delete(_credPath, true);
+                OnlineStatus.Foreground = Brushes.Red;
+                OnlineStatus.Content = "Offline";
                 GoogleAuthenticate();
             }
             else
@@ -144,38 +156,47 @@ namespace AddonsUploader
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
         {
-            _date = DateTime.Now.ToString();
-            DriveList();
-            ///////create folder///////////////////////////////////////////////
-            var folderMetaData = new Google.Apis.Drive.v3.Data.File()
+            if (System.IO.File.Exists(_wtfZip))
             {
-                Name = "World of Warcraft AddonsUploader",
-                MimeType = "application/vnd.google-apps.folder"
-            };
-            if (_driveCheck == false)
-            {
-                FilesResource.CreateRequest folderRequest;
-                folderRequest = _service.Files.Create(folderMetaData);
-                folderRequest.Fields = "id";
-                var folder = folderRequest.Execute();
-                _folderID = folder.Id;
+                _date = DateTime.Now.ToString();
+                DriveList();
+                ///////create folder///////////////////////////////////////////////
+                var folderMetaData = new Google.Apis.Drive.v3.Data.File()
+                {
+                    Name = "World of Warcraft AddonsUploader",
+                    MimeType = "application/vnd.google-apps.folder"
+                };
+                if (_driveCheck == false)
+                {
+                    FilesResource.CreateRequest folderRequest;
+                    folderRequest = _service.Files.Create(folderMetaData);
+                    folderRequest.Fields = "id";
+                    var folder = folderRequest.Execute();
+                    _folderID = folder.Id;
+                }
+
+                /////upload file to a folder////////////////////////////////////////
+                var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                {
+                    Parents = new List<string> { _folderID },
+                    Name = _date + ".zip"
+                };
+                FilesResource.CreateMediaUpload fileRequest;
+                using (var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open))
+                {
+                    fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/zip");
+                    fileRequest.Fields = "id";
+                    fileRequest.Upload();
+                }
+                var file = fileRequest.ResponseBody;
+                InterfaceData.ItemsSource = ListInterface();
+                System.IO.File.Delete(_wtfZip);
+                MessageBox.Show("Upload Done");
             }
-            
-            /////upload file to a folder////////////////////////////////////////
-            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            else
             {
-                Parents = new List<string> { _folderID },
-                Name = _date + ".zip"
-            };
-            FilesResource.CreateMediaUpload fileRequest;
-            using (var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open))
-            {
-                fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/zip");
-                fileRequest.Fields = "id";
-                fileRequest.Upload();
+                MessageBox.Show("Interface archive missing. Zip Interface first.");
             }
-            var file = fileRequest.ResponseBody;
-            InterfaceData.ItemsSource = ListInterface();
         }
 
         private void DriveList()
@@ -214,7 +235,8 @@ namespace AddonsUploader
                     CancellationToken.None,
                     new FileDataStore(_credPath, true)).Result;
                 Console.WriteLine("Credential file saved to: " + _credPath);
-
+                OnlineStatus.Foreground = Brushes.Green;
+                OnlineStatus.Content = "Online";
             }
             // Create Drive API service.
             _service = new DriveService(new BaseClientService.Initializer()
@@ -226,6 +248,7 @@ namespace AddonsUploader
        
         public List<InterfaceElement> ListInterface()
         {
+            List<InterfaceElement> dataGrid = new List<InterfaceElement>();
             FilesResource.ListRequest listRequest = _service.Files.List();
             string query = "'" + _folderID + "'" + " in parents";
             listRequest.Q = query;
@@ -251,6 +274,44 @@ namespace AddonsUploader
             return dataGrid;
         }
 
+        private void InterfaceLoad_Click(object sender, RoutedEventArgs e)
+        {
+            InterfaceData.ItemsSource = ListInterface();
+        }
+
+        private void RestoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            object fileID = ((Button)sender).CommandParameter;
+            Console.WriteLine(fileID.ToString());
+            var request = _service.Files.Get(fileID.ToString());
+            var stream = new System.IO.MemoryStream();
+            request.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
+            {
+                switch(progress.Status)
+                {
+                    case Google.Apis.Download.DownloadStatus.Downloading:
+                        {
+                            Console.WriteLine(progress.BytesDownloaded);
+                            break;
+                        }
+                    case Google.Apis.Download.DownloadStatus.Completed:
+                        {
+                            Console.WriteLine("Download complete.");
+                            System.IO.FileStream file = new System.IO.FileStream(@_wowPath + "//test.zip", System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                            stream.WriteTo(file);
+                            break;
+                        }
+                    case Google.Apis.Download.DownloadStatus.Failed:
+                        {
+                            Console.WriteLine("Download failed.");
+                            break;
+                        }
+                }
+            };
+            request.Download(stream);
+            MessageBox.Show("Download Complete");
+        }
+        
         private void FolderCheck()
         {
             if (Directory.Exists(_intPath))
@@ -273,10 +334,7 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        private void RestoreButton_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
+        
 
 
 
@@ -298,10 +356,7 @@ namespace AddonsUploader
 
 
 
-        private void InterfaceLoad_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
+        
 
         private void InterfaceData_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
