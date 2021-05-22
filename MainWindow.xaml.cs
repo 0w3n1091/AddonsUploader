@@ -49,11 +49,12 @@ namespace AddonsUploader
         {
             public string Name { get; set; }
             public string ID { get; set; }
+            public bool Check { get; set; }
         }
-            
-          
+           
         public MainWindow()
         {
+            
             InitializeComponent();
             InitializeElements();
             if (System.IO.Directory.Exists(_credPath))
@@ -71,7 +72,10 @@ namespace AddonsUploader
                 FolderCheck();
             }
             DriveList();
-            InterfaceData.ItemsSource = ListInterface();
+            if (_driveCheck == true)
+            {
+                InterfaceData.ItemsSource = ListInterface();
+            }
         }
 
         private void InitializeElements()
@@ -225,24 +229,21 @@ namespace AddonsUploader
         {
             List <InterfaceElement> dataGrid = new List<InterfaceElement>();
             FilesResource.ListRequest listRequest = _service.Files.List();
-            string query ="'" + _folderID + "'" + " in parents";
-            Console.WriteLine(query);
+            string query = "'" + _folderID + "'" + " in parents";
             listRequest.Q = query;
             listRequest.PageSize = 10;
             listRequest.Fields = "nextPageToken, files(id, name)";
             // List files.
-            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
-                .Files;
-            Console.WriteLine("Files:");
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
             if (files != null && files.Count > 0)
             {
                 foreach (var file in files)
                 {
-                    Console.WriteLine("{0} ({1})", file.Name, file.Id);
                     dataGrid.Add(new InterfaceElement()
                     {
                         ID = file.Id,
-                        Name = file.Name
+                        Name = file.Name,
+                        Check = false
                     });
                 }
             }
@@ -275,6 +276,7 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
+        
 
 
 
