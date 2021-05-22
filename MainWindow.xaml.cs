@@ -44,14 +44,15 @@ namespace AddonsUploader
         private static string _applicationName = "World of Warcraft AddonsUploader";
         private UserCredential _credential;
         private DriveService _service;
+        List<InterfaceElement> dataGrid = new List<InterfaceElement>();
 
         public class InterfaceElement
         {
             public string Name { get; set; }
             public string ID { get; set; }
-            public bool Check { get; set; }
         }
-           
+
+       
         public MainWindow()
         {
             
@@ -177,8 +178,6 @@ namespace AddonsUploader
             InterfaceData.ItemsSource = ListInterface();
         }
 
-        
-
         private void DriveList()
         {
             FilesResource.ListRequest listRequest = _service.Files.List();
@@ -227,7 +226,6 @@ namespace AddonsUploader
        
         public List<InterfaceElement> ListInterface()
         {
-            List <InterfaceElement> dataGrid = new List<InterfaceElement>();
             FilesResource.ListRequest listRequest = _service.Files.List();
             string query = "'" + _folderID + "'" + " in parents";
             listRequest.Q = query;
@@ -243,8 +241,7 @@ namespace AddonsUploader
                     {
                         ID = file.Id,
                         Name = file.Name,
-                        Check = false
-                    });
+                    }) ;
                 }
             }
             else
@@ -276,7 +273,13 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        
+        private void RestoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+
+
 
 
 
