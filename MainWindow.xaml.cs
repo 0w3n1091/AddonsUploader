@@ -30,7 +30,7 @@ namespace AddonsUploader
     public partial class MainWindow : Window
     {
         private CommonOpenFileDialog _dialog;
-        private static readonly string _settingsFolder = "E:\\", _settingsName = "\\settings.txt";
+        private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
         private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip, _date, _folderID;
         private string _credPath = "token.json";
@@ -44,13 +44,13 @@ namespace AddonsUploader
         private static string _applicationName = "World of Warcraft AddonsUploader";
         private UserCredential _credential;
         private DriveService _service;
+
         public class InterfaceElement
         {
             public string Name { get; set; }
             public string ID { get; set; }
         }
 
-       
         public MainWindow()
         {
             
@@ -130,12 +130,12 @@ namespace AddonsUploader
                 {
                     ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
                     //ZipFile.CreateFromDirectory(_intPath, _intZip);
-                    MessageBox.Show("DONE");
+                    MessageBox.Show("Done.");
                 }
             }
             else
             {
-                MessageBox.Show("Wrong Directory");
+                MessageBox.Show("Wrong Directory. Choose your Interface directory first.");
             }
         }
 
@@ -281,35 +281,52 @@ namespace AddonsUploader
 
         private void RestoreButton_Click(object sender, RoutedEventArgs e)
         {
-            object fileID = ((Button)sender).CommandParameter;
-            Console.WriteLine(fileID.ToString());
-            var request = _service.Files.Get(fileID.ToString());
-            var stream = new System.IO.MemoryStream();
-            request.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
+            if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
             {
-                switch(progress.Status)
+                if (System.IO.File.Exists(_wtfZip))
                 {
-                    case Google.Apis.Download.DownloadStatus.Downloading:
-                        {
-                            Console.WriteLine(progress.BytesDownloaded);
-                            break;
-                        }
-                    case Google.Apis.Download.DownloadStatus.Completed:
-                        {
-                            Console.WriteLine("Download complete.");
-                            System.IO.FileStream file = new System.IO.FileStream(@_wowPath + "//test.zip", System.IO.FileMode.Create, System.IO.FileAccess.Write);
-                            stream.WriteTo(file);
-                            break;
-                        }
-                    case Google.Apis.Download.DownloadStatus.Failed:
-                        {
-                            Console.WriteLine("Download failed.");
-                            break;
-                        }
+                    MessageBox.Show("Restore File already exists. Delete him first.");
                 }
-            };
-            request.Download(stream);
-            MessageBox.Show("Download Complete");
+                else
+                {
+                    object fileID = ((Button)sender).CommandParameter;
+                    Console.WriteLine(fileID.ToString());
+                    var request = _service.Files.Get(fileID.ToString());
+                    var stream = new System.IO.MemoryStream();
+                    request.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
+                    {
+                        switch (progress.Status)
+                        {
+                            case Google.Apis.Download.DownloadStatus.Downloading:
+                                {
+                                    Console.WriteLine(progress.BytesDownloaded);
+                                    break;
+                                }
+                            case Google.Apis.Download.DownloadStatus.Completed:
+                                {
+                                    Console.WriteLine("Download complete.");
+                                    System.IO.FileStream file = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+                                    stream.WriteTo(file);
+                                    break;
+                                }
+                            case Google.Apis.Download.DownloadStatus.Failed:
+                                {
+                                    Console.WriteLine("Download failed.");
+                                    break;
+                                }
+                        }
+                    };
+                    System.IO.Directory.Move(_wtfPath, _wowPath + "//WTF_Backup");
+                    System.IO.Directory.CreateDirectory(_wtfPath);
+                    request.Download(stream);
+                    MessageBox.Show("Download Done. Click OK to begin restoration");
+                    ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Wrong Directory. Choose your Interface directory first.");
+            }
         }
         
         private void FolderCheck()
