@@ -15,7 +15,7 @@
         <Button x:Name ="LoginButton" Content="Google Drive Login" HorizontalAlignment="Left" Margin="663,10,0,0" VerticalAlignment="Top" Width="119" Height="41" Click="GoogleLogin_Click"/>
         <Button x:Name ="UIUpload" Content="Upload" HorizontalAlignment="Left" Margin="663,330,0,0" VerticalAlignment="Top" Width="119" Height="32" Click="UIUpload_Click"/>
         <Button x:Name = "InterfaceList" Content="Load Interface List" HorizontalAlignment="Left" Margin="663,279,0,0" VerticalAlignment="Top" Width="119" Height="32" Click="InterfaceLoad_Click"/>
-        <DataGrid x:Name = "InterfaceData" HorizontalAlignment="Left" Height="352" Margin="10,10,0,0" VerticalAlignment="Top" Width="631" SelectionChanged="InterfaceData_SelectionChanged" SelectedIndex="0" CanUserAddRows="false" IsReadOnly="True" SelectionMode="Single">
+        <DataGrid x:Name = "InterfaceData" HorizontalAlignment="Left" Height="327" Margin="10,10,0,0" VerticalAlignment="Top" Width="631" SelectionChanged="InterfaceData_SelectionChanged" SelectedIndex="0" CanUserAddRows="false" IsReadOnly="True" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -28,6 +28,7 @@
             </DataGrid.Columns>
         </DataGrid>
         <Label x:Name="OnlineStatus" Content="Offline" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="695,51,0,0" Width="56" RenderTransformOrigin="0.252,0.497"/>
+        <ProgressBar HorizontalAlignment="Left" Height="20" Margin="10,342,0,0" VerticalAlignment="Top" Width="631" Minimum="0" Maximum="100"/>
 
 
 

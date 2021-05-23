@@ -192,11 +192,13 @@ namespace AddonsUploader
                 InterfaceData.ItemsSource = ListInterface();
                 System.IO.File.Delete(_wtfZip);
                 MessageBox.Show("Upload Done");
+                System.IO.File.Delete(_wtfZip);
             }
             else
             {
                 MessageBox.Show("Interface archive missing. Zip Interface first.");
             }
+            
         }
 
         private void DriveList()
@@ -264,8 +266,10 @@ namespace AddonsUploader
                     {
                         ID = file.Id,
                         Name = file.Name,
+                        
                     }) ;
                 }
+                
             }
             else
             {
@@ -289,6 +293,11 @@ namespace AddonsUploader
                 }
                 else
                 {
+                    _date = DateTime.Now.ToString("MM/dd/yyyy HH_mm_ss");
+                    string backupDir = _wowPath + "\\WTF " + _date;
+                    Console.WriteLine(backupDir);
+                    System.IO.Directory.Move(_wtfPath, backupDir);
+                    System.IO.Directory.CreateDirectory(_wtfPath);
                     object fileID = ((Button)sender).CommandParameter;
                     Console.WriteLine(fileID.ToString());
                     var request = _service.Files.Get(fileID.ToString());
@@ -307,6 +316,10 @@ namespace AddonsUploader
                                     Console.WriteLine("Download complete.");
                                     System.IO.FileStream file = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
                                     stream.WriteTo(file);
+                                    file.Close();
+                                    ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
+                                    MessageBox.Show("Restoration Complete.");
+                                    System.IO.File.Delete(_wtfZip);
                                     break;
                                 }
                             case Google.Apis.Download.DownloadStatus.Failed:
@@ -316,11 +329,8 @@ namespace AddonsUploader
                                 }
                         }
                     };
-                    System.IO.Directory.Move(_wtfPath, _wowPath + "//WTF_Backup");
-                    System.IO.Directory.CreateDirectory(_wtfPath);
                     request.Download(stream);
-                    MessageBox.Show("Download Done. Click OK to begin restoration");
-                    ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
+                    stream.Close();
                 }
             }
             else
