@@ -51,6 +51,7 @@ namespace AddonsUploader
         {
             public string Name { get; set; }
             public string ID { get; set; }
+            public string Size { get; set; } 
         }
 
         public MainWindow()
@@ -120,6 +121,68 @@ namespace AddonsUploader
             }
         }
 
+        private void FolderCheck()
+        {
+            if (Directory.Exists(_intPath))
+            {
+                InterfaceCheck.IsChecked = true;
+            }
+            if (Directory.Exists(_wtfPath))
+            {
+                WTFCheck.IsChecked = true;
+            }
+            else
+            {
+                InterfaceCheck.IsChecked = false;
+                WTFCheck.IsChecked = false;
+            }
+        }
+
+        private void SettingsSave()
+        {
+            System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
+        }
+
+        private void GoogleLogin_Click(object sender, RoutedEventArgs e)
+        {
+            if (System.IO.Directory.Exists(_credPath))
+            {
+                System.IO.Directory.Delete(_credPath, true);
+                OnlineStatus.Foreground = Brushes.Red;
+                OnlineStatus.Content = "Offline";
+                GoogleAuthenticate();
+            }
+            else
+            {
+                GoogleAuthenticate();
+            }
+        }
+
+        private void GoogleAuthenticate()
+        {
+            using (var stream = new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
+            {
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
+
+                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    _scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(_credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + _credPath);
+                OnlineStatus.Foreground = Brushes.Green;
+                OnlineStatus.Content = "Online";
+            }
+            // Create Drive API service.
+            _service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = _credential,
+                ApplicationName = _applicationName,
+            });
+        }
+
         private void ZipInterface_Click(object sender, RoutedEventArgs e)
         {
             if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
@@ -142,6 +205,7 @@ namespace AddonsUploader
 
         private async void ZipIt()
         {
+            BlockUI();
             await Task.Run(() =>
             {
                 using (var zipFile = new ZipFile())
@@ -157,29 +221,16 @@ namespace AddonsUploader
                             (delegate ()
                             {
                                 ProgressBar.Value = percentage;
+                                
                             }
                             ));
                         }
                     };
                     zipFile.Save(_wtfZip);
-                    MessageBox.Show("Zip Complete.");
                 }
             });
-        }
-
-        private void GoogleLogin_Click(object sender, RoutedEventArgs e)
-        {
-            if (System.IO.Directory.Exists(_credPath))
-            {
-                System.IO.Directory.Delete(_credPath, true);
-                OnlineStatus.Foreground = Brushes.Red;
-                OnlineStatus.Content = "Offline";
-                GoogleAuthenticate();
-            }
-            else
-            {
-                GoogleAuthenticate();
-            }
+            MessageBox.Show("Zip Complete.");
+            EnableUI();
         }
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
@@ -213,6 +264,7 @@ namespace AddonsUploader
 
         private async void UploadIt()
         {
+            BlockUI();
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
             {
                 Parents = new List<string> { _folderID },
@@ -239,92 +291,11 @@ namespace AddonsUploader
                 }
             };
             await fileRequest.UploadAsync();
-            //InterfaceData.ItemsSource = ListInterface();
-            //MessageBox.Show("Upload Complete.");
-            //System.IO.File.Delete(_wtfZip);
-
-        }
-
-        private void DriveList()
-        {
-            FilesResource.ListRequest listRequest = _service.Files.List();
-            listRequest.PageSize = 10;
-            listRequest.Fields = "nextPageToken, files(id, name)";
-
-            // List files.
-            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
-                .Files;
-            if (files != null && files.Count > 0)
-            {
-                foreach (var file in files)
-                {
-                    if (file.Name == _applicationName)
-                    {
-                        _driveCheck = true;
-                        _folderID = file.Id;
-                    }
-                }
-            }
-        }
-
-        private void GoogleAuthenticate()
-        {
-            using (var stream = new FileStream("client_cred.json", FileMode.Open, FileAccess.Read))
-            {
-                // The file token.json stores the user's access and refresh tokens, and is created
-                // automatically when the authorization flow completes for the first time.
-
-                _credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.Load(stream).Secrets,
-                    _scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(_credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + _credPath);
-                OnlineStatus.Foreground = Brushes.Green;
-                OnlineStatus.Content = "Online";
-            }
-            // Create Drive API service.
-            _service = new DriveService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = _credential,
-                ApplicationName = _applicationName,
-            });
-        }
-
-        public List<InterfaceElement> ListInterface()
-        {
-            List<InterfaceElement> dataGrid = new List<InterfaceElement>();
-            FilesResource.ListRequest listRequest = _service.Files.List();
-            string query = "'" + _folderID + "'" + " in parents";
-            listRequest.Q = query;
-            listRequest.PageSize = 999;
-            listRequest.Fields = "nextPageToken, files(id, name)";
-            // List files.
-            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
-            if (files != null && files.Count > 0)
-            {
-                foreach (var file in files)
-                {
-                    dataGrid.Add(new InterfaceElement()
-                    {
-                        ID = file.Id,
-                        Name = file.Name,
-
-                    });
-                }
-
-            }
-            else
-            {
-                Console.WriteLine("No files found.");
-            }
-            return dataGrid;
-        }
-
-        private void InterfaceLoad_Click(object sender, RoutedEventArgs e)
-        {
             InterfaceData.ItemsSource = ListInterface();
+            stream.Dispose();
+            MessageBox.Show("Upload Complete.");
+            System.IO.File.Delete(_wtfZip);
+            EnableUI();
         }
 
         private void RestoreButton_Click(object sender, RoutedEventArgs e)
@@ -383,28 +354,82 @@ namespace AddonsUploader
             }
         }
 
-        private void FolderCheck()
+        private void DriveList()
         {
-            if (Directory.Exists(_intPath))
+            FilesResource.ListRequest listRequest = _service.Files.List();
+            listRequest.PageSize = 999;
+            listRequest.Fields = "nextPageToken, files(id, name)";
+
+            // List files.
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute()
+                .Files;
+            if (files != null && files.Count > 0)
             {
-                InterfaceCheck.IsChecked = true;
+                foreach (var file in files)
+                {
+                    if (file.Name == _applicationName)
+                    {
+                        _driveCheck = true;
+                        _folderID = file.Id;
+                    }
+                }
             }
-            if (Directory.Exists(_wtfPath))
+        }
+
+        public List<InterfaceElement> ListInterface()
+        {
+            List<InterfaceElement> dataGrid = new List<InterfaceElement>();
+            FilesResource.ListRequest listRequest = _service.Files.List();
+            string query = "'" + _folderID + "'" + " in parents";
+            listRequest.Q = query;
+            listRequest.PageSize = 999;
+            listRequest.Fields = "nextPageToken, files(id, name, size)";
+            // List files.
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
+            if (files != null && files.Count > 0)
             {
-                WTFCheck.IsChecked = true;
+                foreach (var file in files)
+                {
+                    dataGrid.Add(new InterfaceElement()
+                    {
+                        ID = file.Id,
+                        Name = file.Name,
+                        Size = ((long)file.Size) / 1048576 + " MB"
+                    });
+                }
             }
             else
             {
-                InterfaceCheck.IsChecked = false;
-                WTFCheck.IsChecked = false;
+                Console.WriteLine("No files found.");
             }
+            return dataGrid;
         }
 
-        private void SettingsSave()
+        
+        private void InterfaceLoad_Click(object sender, RoutedEventArgs e)
         {
-            System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
+            InterfaceData.ItemsSource = ListInterface();
         }
 
+        private void BlockUI()
+        {
+            PathButton.IsEnabled = false;
+            ZipInterface.IsEnabled = false;
+            LoginButton.IsEnabled = false;
+            UIUpload.IsEnabled = false;
+            InterfaceList.IsEnabled = false;
+            InterfaceData.IsEnabled = false;
+        }
+
+        private void EnableUI()
+        {
+            PathButton.IsEnabled = true;
+            ZipInterface.IsEnabled = true;
+            LoginButton.IsEnabled = true;
+            UIUpload.IsEnabled = true;
+            InterfaceList.IsEnabled = true;
+            InterfaceData.IsEnabled = true;
+        }
 
 
 
