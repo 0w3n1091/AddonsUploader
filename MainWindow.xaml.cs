@@ -14,13 +14,15 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
-using System.IO.Compression;
+//using System.IO.Compression;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System.Threading;
+using System.ComponentModel;
+using Ionic.Zip;
 
 namespace AddonsUploader
 {
@@ -53,7 +55,7 @@ namespace AddonsUploader
 
         public MainWindow()
         {
-            
+
             InitializeComponent();
             InitializeElements();
             if (System.IO.Directory.Exists(_credPath))
@@ -86,7 +88,7 @@ namespace AddonsUploader
         {
             InterfaceCheck.IsEnabled = false;
             WTFCheck.IsEnabled = false;
-            
+
             if (System.IO.File.Exists(_settingsFullPath))
             {
                 _dialog = new CommonOpenFileDialog()
@@ -103,7 +105,7 @@ namespace AddonsUploader
                     IsFolderPicker = true
                 };
             }
-           
+
         }
 
         private void PathButton_Click(object sender, RoutedEventArgs e)
@@ -126,17 +128,43 @@ namespace AddonsUploader
                 {
                     MessageBox.Show("File already exists");
                 }
+
                 else
                 {
-                    ZipFile.CreateFromDirectory(_wtfPath, _wtfZip);
-                    //ZipFile.CreateFromDirectory(_intPath, _intZip);
-                    MessageBox.Show("Done.");
+                    ZipIt();
                 }
             }
             else
             {
                 MessageBox.Show("Wrong Directory. Choose your Interface directory first.");
             }
+        }
+
+        private async void ZipIt()
+        {
+            await Task.Run(() =>
+            {
+                using (var zipFile = new ZipFile())
+                {
+                    // add content to zip here 
+                    zipFile.AddDirectory(_wtfPath);
+                    zipFile.SaveProgress += (o, args) =>
+                    {
+                        if (args.EntriesSaved > 0 && args.EntriesTotal > 0)
+                        {
+                            var percentage = (int)Math.Floor(args.EntriesSaved * 100.0d / args.EntriesTotal);
+                            ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
+                            (delegate ()
+                            {
+                                ProgressBar.Value = percentage;
+                            }
+                            ));
+                        }
+                    };
+                    zipFile.Save(_wtfZip);
+                    MessageBox.Show("Zip Complete.");
+                }
+            });
         }
 
         private void GoogleLogin_Click(object sender, RoutedEventArgs e)
@@ -198,7 +226,7 @@ namespace AddonsUploader
             {
                 MessageBox.Show("Interface archive missing. Zip Interface first.");
             }
-            
+
         }
 
         private void DriveList()
@@ -247,7 +275,7 @@ namespace AddonsUploader
                 ApplicationName = _applicationName,
             });
         }
-       
+
         public List<InterfaceElement> ListInterface()
         {
             List<InterfaceElement> dataGrid = new List<InterfaceElement>();
@@ -266,10 +294,10 @@ namespace AddonsUploader
                     {
                         ID = file.Id,
                         Name = file.Name,
-                        
-                    }) ;
+
+                    });
                 }
-                
+
             }
             else
             {
@@ -317,7 +345,7 @@ namespace AddonsUploader
                                     System.IO.FileStream file = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
                                     stream.WriteTo(file);
                                     file.Close();
-                                    ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
+                                    //ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
                                     MessageBox.Show("Restoration Complete.");
                                     System.IO.File.Delete(_wtfZip);
                                     break;
@@ -338,7 +366,7 @@ namespace AddonsUploader
                 MessageBox.Show("Wrong Directory. Choose your Interface directory first.");
             }
         }
-        
+
         private void FolderCheck()
         {
             if (Directory.Exists(_intPath))
@@ -361,7 +389,6 @@ namespace AddonsUploader
             System.IO.File.WriteAllText(_settingsFolder + _settingsName, _dialog.FileName);
         }
 
-        
 
 
 
@@ -383,7 +410,8 @@ namespace AddonsUploader
 
 
 
-        
+
+
 
         private void InterfaceData_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -397,10 +425,10 @@ namespace AddonsUploader
 
         private void WTFCheck_Checked(object sender, RoutedEventArgs e)
         {
-            
+
         }
- 
-        
+
+
     }
 }
 

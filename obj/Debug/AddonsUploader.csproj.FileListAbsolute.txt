@@ -60,3 +60,6 @@ F:\Projekty\AddonsUploader\bin\Debug\client_cred.json
 F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v2.dll
 F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v2.pdb
 F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v2.xml
+F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.dll
+F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.pdb
+F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.xml
