@@ -202,30 +202,46 @@ namespace AddonsUploader
                     var folder = folderRequest.Execute();
                     _folderID = folder.Id;
                 }
-
-                /////upload file to a folder////////////////////////////////////////
-                var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-                {
-                    Parents = new List<string> { _folderID },
-                    Name = _date + ".zip"
-                };
-                FilesResource.CreateMediaUpload fileRequest;
-                using (var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open))
-                {
-                    fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/zip");
-                    fileRequest.Fields = "id";
-                    fileRequest.Upload();
-                }
-                var file = fileRequest.ResponseBody;
-                InterfaceData.ItemsSource = ListInterface();
-                System.IO.File.Delete(_wtfZip);
-                MessageBox.Show("Upload Done");
-                System.IO.File.Delete(_wtfZip);
+                UploadIt();
             }
             else
             {
                 MessageBox.Show("Interface archive missing. Zip Interface first.");
             }
+
+        }
+
+        private async void UploadIt()
+        {
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            {
+                Parents = new List<string> { _folderID },
+                Name = _date + ".zip",
+            };
+            var wtf = new System.IO.FileInfo(_wtfZip);
+            FilesResource.CreateRequest newfileRequest;
+            FilesResource.CreateMediaUpload fileRequest;
+            var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open);
+            fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/.zip");
+            fileRequest.Fields = "id";
+            fileRequest.ChunkSize = FilesResource.CreateMediaUpload.MinimumChunkSize;
+            fileRequest.ProgressChanged += (args) =>
+            {
+                if (args.BytesSent > 0 && _wtfZip.Length > 0)
+                {
+                var percentage = (int)Math.Floor(args.BytesSent * 100.0d / wtf.Length);
+                ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
+                (delegate ()
+                {
+                    ProgressBar.Value = percentage;
+                }
+                ));
+                }
+            };
+            await fileRequest.UploadAsync();
+            //InterfaceData.ItemsSource = ListInterface();
+            //MessageBox.Show("Upload Complete.");
+            //System.IO.File.Delete(_wtfZip);
 
         }
 
@@ -282,7 +298,7 @@ namespace AddonsUploader
             FilesResource.ListRequest listRequest = _service.Files.List();
             string query = "'" + _folderID + "'" + " in parents";
             listRequest.Q = query;
-            listRequest.PageSize = 10;
+            listRequest.PageSize = 999;
             listRequest.Fields = "nextPageToken, files(id, name)";
             // List files.
             IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
