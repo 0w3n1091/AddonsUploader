@@ -33,7 +33,7 @@ namespace AddonsUploader
         private CommonOpenFileDialog _dialog;
         private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
-        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip, _date, _folderID, _tempDirectory, _backupDirectory;
+        private string _wowPath, _wtfPath, _intPath, _intZip, _date, _folderID, _tempDirectory, _backupDirectory;
         private readonly string _credPath = "token.json";
         private bool _driveCheck;
         private long _fileSize;
@@ -70,7 +70,6 @@ namespace AddonsUploader
             if (System.IO.File.Exists(_settingsFullPath))
             {
                 _wowPath = System.IO.File.ReadAllText(_settingsFullPath);
-                _wtfZip = _wowPath + "\\wtf_temp.zip";
                 _intZip = _wowPath + "\\int_temp.zip";
                 _wtfPath = _wowPath + "\\WTF";
                 _intPath = _wowPath + "\\Interface";
@@ -170,7 +169,6 @@ namespace AddonsUploader
                     "user",
                     CancellationToken.None,
                     new FileDataStore(_credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + _credPath);
                 OnlineStatus.Foreground = Brushes.Green;
                 OnlineStatus.Content = "Online";
             }
@@ -186,7 +184,7 @@ namespace AddonsUploader
         {
             if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
             {
-                if (System.IO.File.Exists(_wtfZip))
+                if (System.IO.File.Exists(_intZip))
                 {
                     MessageBox.Show("File already exists");
                 }
@@ -209,23 +207,22 @@ namespace AddonsUploader
             {
                 using (var zipFile = new ZipFile())
                 {
-                    // add content to zip here 
-                    zipFile.AddDirectory(_wtfPath);
-                    zipFile.SaveProgress += (o, args) =>
+                    zipFile.AddDirectory(_wtfPath, "WTF");
+                    zipFile.AddDirectory(_intPath, "Interface");
+                    zipFile.SaveProgress += (o, progress) =>
                     {
-                        if (args.EntriesSaved > 0 && args.EntriesTotal > 0)
+                        if (progress.EntriesSaved > 0 && progress.EntriesTotal > 0)
                         {
-                            var percentage = (int)Math.Floor(args.EntriesSaved * 100.0d / args.EntriesTotal);
+                            var percentage = (int)Math.Floor(progress.EntriesSaved * 100.0d / progress.EntriesTotal);
                             ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
                             (delegate ()
                             {
                                 ProgressBar.Value = percentage;
-
                             }
                             ));
                         }
                     };
-                    zipFile.Save(_wtfZip);
+                    zipFile.Save(_intZip);
                 }
             });
             MessageBox.Show("Zip Complete.");
@@ -234,7 +231,7 @@ namespace AddonsUploader
 
         private void UIUpload_Click(object sender, RoutedEventArgs e)
         {
-            if (System.IO.File.Exists(_wtfZip))
+            if (System.IO.File.Exists(_intZip))
             {
                 _date = DateTime.Now.ToString();
                 DriveList();
@@ -269,9 +266,9 @@ namespace AddonsUploader
                 Parents = new List<string> { _folderID },
                 Name = _date + ".zip",
             };
-            var wtf = new System.IO.FileInfo(_wtfZip);
+            var wtf = new System.IO.FileInfo(_intZip);
             FilesResource.CreateMediaUpload fileRequest;
-            var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open);
+            var stream = new System.IO.FileStream(_intZip, System.IO.FileMode.Open);
             fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/.zip");
             fileRequest.Fields = "id";
             fileRequest.ChunkSize = FilesResource.CreateMediaUpload.MinimumChunkSize;
@@ -290,9 +287,9 @@ namespace AddonsUploader
             };
             await fileRequest.UploadAsync();
             InterfaceData.ItemsSource = ListInterface();
-            stream.Dispose();
+            stream.Close();
             MessageBox.Show("Upload Complete.");
-            System.IO.File.Delete(_wtfZip);
+            System.IO.File.Delete(_intZip);
             EnableUI();
         }
 
@@ -300,15 +297,14 @@ namespace AddonsUploader
         {
             if (WTFCheck.IsChecked == true && InterfaceCheck.IsChecked == true)
             {
-                if (System.IO.File.Exists(_wtfZip))
+                if (System.IO.File.Exists(_intZip))
                 {
                     MessageBox.Show("Restore File already exists. Delete him first.");
                 }
                 else
                 {
+                    BackupInterface();
                     _date = DateTime.Now.ToString("MM/dd/yyyy HH_mm_ss");
-                    string backupDir = _wowPath + "\\WTF " + _date;
-                    System.IO.Directory.Move(_wtfPath, backupDir);
                     System.IO.Directory.CreateDirectory(_wtfPath);
                     object fileID = ((Button)sender).CommandParameter;
                     RestoreIt(fileID);
@@ -353,7 +349,7 @@ namespace AddonsUploader
                 ));
             };
             await downloadRequest.DownloadAsync(stream);
-            System.IO.FileStream saveFile = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+            System.IO.FileStream saveFile = new System.IO.FileStream(_intZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
             stream.WriteTo(saveFile);
             saveFile.Close();
             stream.Close();
@@ -366,7 +362,7 @@ namespace AddonsUploader
             BlockUI();
             await Task.Run(() =>
             {
-                using (var zipFile = ZipFile.Read(_wtfZip))
+                using (var zipFile = ZipFile.Read(_intZip))
                 {
                     zipFile.ExtractProgress += (o, args) =>
                     {
@@ -382,11 +378,11 @@ namespace AddonsUploader
                             ));
                         }
                     };
-                    zipFile.ExtractAll(_wtfPath);
+                    zipFile.ExtractAll(_wowPath);
                 }
             });
             MessageBox.Show("Restoration Complete.");
-            System.IO.File.Delete(_wtfZip);
+            System.IO.File.Delete(_intZip);
             EnableUI();
         }
     
