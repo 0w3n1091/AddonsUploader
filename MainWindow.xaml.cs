@@ -14,7 +14,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
-//using System.IO.Compression;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
@@ -34,16 +33,17 @@ namespace AddonsUploader
         private CommonOpenFileDialog _dialog;
         private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
-        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip, _date, _folderID;
-        private string _credPath = "token.json";
+        private string _wowPath, _wtfPath, _intPath, _wtfZip, _intZip, _date, _folderID, _tempDirectory, _backupDirectory;
+        private readonly string _credPath = "token.json";
         private bool _driveCheck;
-        static string[] _scopes = { DriveService.Scope.Drive,
+        private long _fileSize;
+        static readonly string[] _scopes = { DriveService.Scope.Drive,
                                     DriveService.Scope.DriveAppdata,
                                     DriveService.Scope.DriveFile,
                                     DriveService.Scope.DriveMetadataReadonly,
                                     DriveService.Scope.DriveReadonly,
                                     DriveService.Scope.DriveScripts};
-        private static string _applicationName = "World of Warcraft AddonsUploader";
+        private static readonly string _applicationName = "World of Warcraft InterfaceUploader";
         private UserCredential _credential;
         private DriveService _service;
 
@@ -51,12 +51,11 @@ namespace AddonsUploader
         {
             public string Name { get; set; }
             public string ID { get; set; }
-            public string Size { get; set; } 
+            public string Size { get; set; }
         }
 
         public MainWindow()
         {
-
             InitializeComponent();
             InitializeElements();
             if (System.IO.Directory.Exists(_credPath))
@@ -221,7 +220,7 @@ namespace AddonsUploader
                             (delegate ()
                             {
                                 ProgressBar.Value = percentage;
-                                
+
                             }
                             ));
                         }
@@ -242,7 +241,7 @@ namespace AddonsUploader
                 ///////create folder///////////////////////////////////////////////
                 var folderMetaData = new Google.Apis.Drive.v3.Data.File()
                 {
-                    Name = "World of Warcraft AddonsUploader",
+                    Name = _applicationName,
                     MimeType = "application/vnd.google-apps.folder"
                 };
                 if (_driveCheck == false)
@@ -271,7 +270,6 @@ namespace AddonsUploader
                 Name = _date + ".zip",
             };
             var wtf = new System.IO.FileInfo(_wtfZip);
-            FilesResource.CreateRequest newfileRequest;
             FilesResource.CreateMediaUpload fileRequest;
             var stream = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Open);
             fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/.zip");
@@ -279,15 +277,15 @@ namespace AddonsUploader
             fileRequest.ChunkSize = FilesResource.CreateMediaUpload.MinimumChunkSize;
             fileRequest.ProgressChanged += (args) =>
             {
-                if (args.BytesSent > 0 && _wtfZip.Length > 0)
+                if (args.BytesSent > 0 && wtf.Length > 0)
                 {
-                var percentage = (int)Math.Floor(args.BytesSent * 100.0d / wtf.Length);
-                ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
-                (delegate ()
-                {
-                    ProgressBar.Value = percentage;
-                }
-                ));
+                    var percentage = (int)Math.Floor(args.BytesSent * 100.0d / wtf.Length);
+                    ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
+                    (delegate ()
+                    {
+                        ProgressBar.Value = percentage;
+                    }
+                    ));
                 }
             };
             await fileRequest.UploadAsync();
@@ -310,42 +308,10 @@ namespace AddonsUploader
                 {
                     _date = DateTime.Now.ToString("MM/dd/yyyy HH_mm_ss");
                     string backupDir = _wowPath + "\\WTF " + _date;
-                    Console.WriteLine(backupDir);
                     System.IO.Directory.Move(_wtfPath, backupDir);
                     System.IO.Directory.CreateDirectory(_wtfPath);
                     object fileID = ((Button)sender).CommandParameter;
-                    Console.WriteLine(fileID.ToString());
-                    var request = _service.Files.Get(fileID.ToString());
-                    var stream = new System.IO.MemoryStream();
-                    request.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
-                    {
-                        switch (progress.Status)
-                        {
-                            case Google.Apis.Download.DownloadStatus.Downloading:
-                                {
-                                    Console.WriteLine(progress.BytesDownloaded);
-                                    break;
-                                }
-                            case Google.Apis.Download.DownloadStatus.Completed:
-                                {
-                                    Console.WriteLine("Download complete.");
-                                    System.IO.FileStream file = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
-                                    stream.WriteTo(file);
-                                    file.Close();
-                                    //ZipFile.ExtractToDirectory(_wtfZip, _wtfPath);
-                                    MessageBox.Show("Restoration Complete.");
-                                    System.IO.File.Delete(_wtfZip);
-                                    break;
-                                }
-                            case Google.Apis.Download.DownloadStatus.Failed:
-                                {
-                                    Console.WriteLine("Download failed.");
-                                    break;
-                                }
-                        }
-                    };
-                    request.Download(stream);
-                    stream.Close();
+                    RestoreIt(fileID);
                 }
             }
             else
@@ -353,7 +319,77 @@ namespace AddonsUploader
                 MessageBox.Show("Wrong Directory. Choose your Interface directory first.");
             }
         }
+        private async void RestoreIt(object fileID)
+        {
+            BlockUI();
+            FilesResource.ListRequest listRequest = _service.Files.List();
+            string query = "'" + _folderID + "'" + " in parents";
+            listRequest.Q = query;
+            listRequest.PageSize = 999;
+            listRequest.Fields = "nextPageToken, files(id, size)";
+            IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    if (file.Id == fileID.ToString())
+                    {
+                        _fileSize = (long)file.Size;
+                    }
+                }
+            }
+            FilesResource.GetRequest downloadRequest;
+            downloadRequest = _service.Files.Get(fileID.ToString());
+            var stream = new System.IO.MemoryStream();
+            downloadRequest.MediaDownloader.ChunkSize = FilesResource.CreateMediaUpload.MinimumChunkSize;
+            downloadRequest.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
+            {
+                int percentage = (int)Math.Floor(progress.BytesDownloaded * 100.0d / _fileSize);
+                ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
+                (delegate ()
+                {
+                    ProgressBar.Value = percentage;
+                }
+                ));
+            };
+            await downloadRequest.DownloadAsync(stream);
+            System.IO.FileStream saveFile = new System.IO.FileStream(_wtfZip, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+            stream.WriteTo(saveFile);
+            saveFile.Close();
+            stream.Close();
+            EnableUI();
+            UnZipIt();
+        }
 
+        private async void UnZipIt()
+        {
+            BlockUI();
+            await Task.Run(() =>
+            {
+                using (var zipFile = ZipFile.Read(_wtfZip))
+                {
+                    zipFile.ExtractProgress += (o, args) =>
+                    {
+                        if (args.EntriesExtracted > 0 && args.EntriesTotal > 0)
+                        {
+                            var percentage = (int)Math.Floor(args.EntriesExtracted * 100.0d / args.EntriesTotal);
+                            ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
+                            (delegate ()
+                            {
+                                ProgressBar.Value = percentage;
+
+                            }
+                            ));
+                        }
+                    };
+                    zipFile.ExtractAll(_wtfPath);
+                }
+            });
+            MessageBox.Show("Restoration Complete.");
+            System.IO.File.Delete(_wtfZip);
+            EnableUI();
+        }
+    
         private void DriveList()
         {
             FilesResource.ListRequest listRequest = _service.Files.List();
@@ -431,45 +467,34 @@ namespace AddonsUploader
             InterfaceData.IsEnabled = true;
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private void InterfaceData_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void BackupInterface()
         {
-
+            if (System.IO.Directory.Exists(_wtfPath) && System.IO.Directory.Exists(_intPath))
+            {
+                _backupDirectory = _wowPath + "\\InterfaceBackup" + "\\" + DateTime.Now.ToString("MM/dd/yyyyHH_mm_ss");
+                System.IO.Directory.CreateDirectory(_backupDirectory);
+                System.IO.Directory.Move(_intPath, _backupDirectory + "\\Interface");
+                System.IO.Directory.Move(_wtfPath, _backupDirectory + "\\WTF");
+            }
+            else
+            {
+                MessageBox.Show("Interface directories missing.");
+            }
         }
-
-        private void InterfaceCheck_Checked(object sender, RoutedEventArgs e)
+        private void PrepareFiles()
         {
-
+            if (System.IO.Directory.Exists(_wtfPath) && System.IO.Directory.Exists(_intPath))
+            {
+                _tempDirectory = _wowPath + "\\InterfaceTemp";
+                System.IO.Directory.CreateDirectory(_tempDirectory);
+                System.IO.Directory.Move(_intPath, _tempDirectory + "\\Interface");
+                System.IO.Directory.Move(_wtfPath, _tempDirectory + "\\WTF");
+            }
+            else
+            {
+                MessageBox.Show("Interface directories missing.");
+            }
         }
-
-        private void WTFCheck_Checked(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-
     }
 }
 
