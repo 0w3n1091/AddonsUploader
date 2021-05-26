@@ -33,8 +33,8 @@ namespace AddonsUploader
         private CommonOpenFileDialog _dialog;
         private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt";
         private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
-        private string _wowPath, _wtfPath, _intPath, _intZip, _date, _folderID, _tempDirectory, _backupDirectory;
-        private readonly string _credPath = "token.json";
+        private string _wtfPath, _intPath, _date, _folderID, _backupDirectory;
+        private readonly string _wowPath, _intZip, _credPath = "token.json";
         private bool _driveCheck;
         private long _fileSize;
         static readonly string[] _scopes = { DriveService.Scope.Drive,
@@ -65,7 +65,7 @@ namespace AddonsUploader
             else
             {
                 OnlineStatus.Foreground = Brushes.Red;
-                OnlineStatus.Content = "Offline";
+                OnlineStatus.Content = "Disconnected";
             }
             if (System.IO.File.Exists(_settingsFullPath))
             {
@@ -73,7 +73,7 @@ namespace AddonsUploader
                 _intZip = _wowPath + "\\int_temp.zip";
                 _wtfPath = _wowPath + "\\WTF";
                 _intPath = _wowPath + "\\Interface";
-                PathLabel.Content = _wowPath;
+                PathLabel.Text = _wowPath;
                 FolderCheck();
             }
             DriveList();
@@ -111,7 +111,7 @@ namespace AddonsUploader
         {
             if (_dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                PathLabel.Content = _dialog.FileName;
+                PathLabel.Text = _dialog.FileName;
                 _wtfPath = _dialog.FileName + "\\WTF";
                 _intPath = _dialog.FileName + "\\Interface";
                 FolderCheck();
@@ -147,7 +147,7 @@ namespace AddonsUploader
             {
                 System.IO.Directory.Delete(_credPath, true);
                 OnlineStatus.Foreground = Brushes.Red;
-                OnlineStatus.Content = "Offline";
+                OnlineStatus.Content = "Disconnected";
                 GoogleAuthenticate();
             }
             else
@@ -170,7 +170,7 @@ namespace AddonsUploader
                     CancellationToken.None,
                     new FileDataStore(_credPath, true)).Result;
                 OnlineStatus.Foreground = Brushes.Green;
-                OnlineStatus.Content = "Online";
+                OnlineStatus.Content = "Connected";
             }
             // Create Drive API service.
             _service = new DriveService(new BaseClientService.Initializer()
@@ -186,7 +186,7 @@ namespace AddonsUploader
             {
                 if (System.IO.File.Exists(_intZip))
                 {
-                    MessageBox.Show("File already exists");
+                    MessageBox.Show("Interface archive already exists.");
                 }
 
                 else
@@ -225,7 +225,7 @@ namespace AddonsUploader
                     zipFile.Save(_intZip);
                 }
             });
-            MessageBox.Show("Zip Complete.");
+            MessageBox.Show("Creating Interface archive completed.");
             EnableUI();
         }
 
@@ -288,7 +288,7 @@ namespace AddonsUploader
             await fileRequest.UploadAsync();
             InterfaceData.ItemsSource = ListInterface();
             stream.Close();
-            MessageBox.Show("Upload Complete.");
+            MessageBox.Show("Upload completed");
             System.IO.File.Delete(_intZip);
             EnableUI();
         }
@@ -299,7 +299,7 @@ namespace AddonsUploader
             {
                 if (System.IO.File.Exists(_intZip))
                 {
-                    MessageBox.Show("Restore File already exists. Delete him first.");
+                    MessageBox.Show("Restore File already exists. Delete it first.");
                 }
                 else
                 {
@@ -381,7 +381,7 @@ namespace AddonsUploader
                     zipFile.ExtractAll(_wowPath);
                 }
             });
-            MessageBox.Show("Restoration Complete.");
+            MessageBox.Show("Restoration completed.");
             System.IO.File.Delete(_intZip);
             EnableUI();
         }
@@ -422,6 +422,7 @@ namespace AddonsUploader
             {
                 foreach (var file in files)
                 {
+
                     dataGrid.Add(new InterfaceElement()
                     {
                         ID = file.Id,
@@ -471,20 +472,6 @@ namespace AddonsUploader
                 System.IO.Directory.CreateDirectory(_backupDirectory);
                 System.IO.Directory.Move(_intPath, _backupDirectory + "\\Interface");
                 System.IO.Directory.Move(_wtfPath, _backupDirectory + "\\WTF");
-            }
-            else
-            {
-                MessageBox.Show("Interface directories missing.");
-            }
-        }
-        private void PrepareFiles()
-        {
-            if (System.IO.Directory.Exists(_wtfPath) && System.IO.Directory.Exists(_intPath))
-            {
-                _tempDirectory = _wowPath + "\\InterfaceTemp";
-                System.IO.Directory.CreateDirectory(_tempDirectory);
-                System.IO.Directory.Move(_intPath, _tempDirectory + "\\Interface");
-                System.IO.Directory.Move(_wtfPath, _tempDirectory + "\\WTF");
             }
             else
             {
