@@ -33,5 +33,4 @@
         <Label x:Name="OnlineStatus" Content="Offline" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="672,51,0,0" Width="96" RenderTransformOrigin="0.252,0.497" HorizontalContentAlignment="Center"/>
         <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Left" Height="20" Margin="10,342,0,0" VerticalAlignment="Top" Width="640" Minimum="0" Maximum="100"/>
     </Grid>
-
 </Window>

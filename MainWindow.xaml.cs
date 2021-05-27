@@ -1,52 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
-using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System.Threading;
-using System.ComponentModel;
 using Ionic.Zip;
 
 namespace AddonsUploader
 {
-    /// <summary>
-    /// Logika interakcji dla klasy MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private CommonOpenFileDialog _dialog;
-        private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt";
-        private static readonly string _settingsFullPath = _settingsFolder + _settingsName;
+        private static readonly string _settingsFolder = AppDomain.CurrentDomain.BaseDirectory, _settingsName = "\\settings.txt", _settingsFullPath = _settingsFolder + _settingsName, _applicationName = "World of Warcraft InterfaceUploader";
         private string _wtfPath, _intPath, _date, _folderID, _backupDirectory;
         private readonly string _wowPath, _intZip, _credPath = "token.json";
         private bool _driveCheck;
         private long _fileSize;
-        static readonly string[] _scopes = { DriveService.Scope.Drive,
+        private UserCredential _credential;
+        private DriveService _service;
+        private static readonly string[] _scopes = { DriveService.Scope.Drive,
                                     DriveService.Scope.DriveAppdata,
                                     DriveService.Scope.DriveFile,
                                     DriveService.Scope.DriveMetadataReadonly,
                                     DriveService.Scope.DriveReadonly,
                                     DriveService.Scope.DriveScripts};
-        private static readonly string _applicationName = "World of Warcraft InterfaceUploader";
-        private UserCredential _credential;
-        private DriveService _service;
-
         public class InterfaceElement
         {
             public string Name { get; set; }
@@ -90,7 +74,7 @@ namespace AddonsUploader
 
             if (System.IO.File.Exists(_settingsFullPath))
             {
-                _dialog = new CommonOpenFileDialog()
+                _dialog = new CommonOpenFileDialog("Choose your World of Warcraft Interface directory")
                 {
                     InitialDirectory = System.IO.File.ReadAllText(_settingsFullPath),
                     IsFolderPicker = true,
@@ -98,7 +82,7 @@ namespace AddonsUploader
             }
             else
             {
-                _dialog = new CommonOpenFileDialog()
+                _dialog = new CommonOpenFileDialog("Choose your World of Warcraft Interface directory")
                 {
                     InitialDirectory = "C:\\",
                     IsFolderPicker = true
@@ -235,7 +219,6 @@ namespace AddonsUploader
             {
                 _date = DateTime.Now.ToString();
                 DriveList();
-                ///////create folder///////////////////////////////////////////////
                 var folderMetaData = new Google.Apis.Drive.v3.Data.File()
                 {
                     Name = _applicationName,
@@ -272,11 +255,11 @@ namespace AddonsUploader
             fileRequest = _service.Files.Create(fileMetadata, stream, "zip file/.zip");
             fileRequest.Fields = "id";
             fileRequest.ChunkSize = FilesResource.CreateMediaUpload.MinimumChunkSize;
-            fileRequest.ProgressChanged += (args) =>
+            fileRequest.ProgressChanged += (progress) =>
             {
-                if (args.BytesSent > 0 && wtf.Length > 0)
+                if (progress.BytesSent > 0 && wtf.Length > 0)
                 {
-                    var percentage = (int)Math.Floor(args.BytesSent * 100.0d / wtf.Length);
+                    var percentage = (int)Math.Floor(progress.BytesSent * 100.0d / wtf.Length);
                     ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
                     (delegate ()
                     {
@@ -364,11 +347,11 @@ namespace AddonsUploader
             {
                 using (var zipFile = ZipFile.Read(_intZip))
                 {
-                    zipFile.ExtractProgress += (o, args) =>
+                    zipFile.ExtractProgress += (o, progress) =>
                     {
-                        if (args.EntriesExtracted > 0 && args.EntriesTotal > 0)
+                        if (progress.EntriesExtracted > 0 && progress.EntriesTotal > 0)
                         {
-                            var percentage = (int)Math.Floor(args.EntriesExtracted * 100.0d / args.EntriesTotal);
+                            var percentage = (int)Math.Floor(progress.EntriesExtracted * 100.0d / progress.EntriesTotal);
                             ProgressBar.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Normal, new Action
                             (delegate ()
                             {
@@ -416,7 +399,6 @@ namespace AddonsUploader
             listRequest.Q = query;
             listRequest.PageSize = 999;
             listRequest.Fields = "nextPageToken, files(id, name, size)";
-            // List files.
             IList<Google.Apis.Drive.v3.Data.File> files = listRequest.Execute().Files;
             if (files != null && files.Count > 0)
             {
@@ -433,7 +415,7 @@ namespace AddonsUploader
             }
             else
             {
-                Console.WriteLine("No files found.");
+                MessageBox.Show("No files found.");
             }
             return dataGrid;
         }
