@@ -63,3 +63,7 @@ F:\Projekty\AddonsUploader\bin\Debug\Google.Apis.Drive.v2.xml
 F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.dll
 F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.pdb
 F:\Projekty\AddonsUploader\bin\Debug\DotNetZip.xml
+F:\Projekty\AddonsUploader\bin\Debug\AddonsUploader.exe.manifest
+F:\Projekty\AddonsUploader\bin\Debug\AddonsUploader.application
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.exe.manifest
+F:\Projekty\AddonsUploader\obj\Debug\AddonsUploader.application
